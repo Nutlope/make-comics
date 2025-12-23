@@ -180,7 +180,7 @@ export default function EditorPage() {
         duration: 4000,
       })
     } catch (error) {
-      console.error("[v0] Error generating page:", error)
+      console.error("Error generating page:", error)
       toast({
         title: "Generation failed",
         description: "Failed to generate comic page. Please try again.",

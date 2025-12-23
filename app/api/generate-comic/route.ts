@@ -3,20 +3,6 @@ import Together from "together-ai";
 
 const FIXED_DIMENSIONS = { width: 864, height: 1184 };
 
-const STYLE_DESCRIPTIONS: Record<string, string> = {
-  noir: "film noir style, high contrast black and white, deep dramatic shadows, 1940s detective aesthetic, heavy bold inking, moody atmospheric lighting",
-  manga:
-    "Japanese manga style, clean precise black linework, screen tone shading, expressive eyes, dynamic speed lines, black and white with impact effects",
-  superhero:
-    "classic American superhero comic style, bold vibrant colors, dynamic heroic poses, detailed muscular anatomy, Jim Lee and Jack Kirby inspired",
-  vintage:
-    "Golden Age 1950s comic style, visible halftone Ben-Day dots, limited retro color palette, nostalgic warm tones, classic adventure comics",
-  modern:
-    "contemporary digital comic art, smooth gradient coloring, detailed realistic backgrounds, cinematic widescreen composition, graphic novel quality",
-  watercolor:
-    "painted watercolor comic style, soft blended edges, flowing artistic colors, delicate linework with painted fills, ethereal atmosphere",
-};
-
 async function analyzeCharacterImage(
   imageBase64: string,
   apiKey: string,
@@ -71,7 +57,7 @@ Be VERY specific and detailed. This description will be used to draw this exact 
 
     if (!response.ok) {
       console.error(
-        `[v0] Vision API error for character ${characterNumber}:`,
+        `Vision API error for character ${characterNumber}:`,
         await response.text()
       );
       return `Character ${characterNumber}`;
@@ -80,13 +66,27 @@ Be VERY specific and detailed. This description will be used to draw this exact 
     const data = await response.json();
     const description =
       data.choices?.[0]?.message?.content || `Character ${characterNumber}`;
-    console.log(`[v0] Character ${characterNumber} description:`, description);
+    console.log(`Character ${characterNumber} description:`, description);
     return description;
   } catch (error) {
-    console.error(`[v0] Error analyzing character ${characterNumber}:`, error);
+    console.error(`Error analyzing character ${characterNumber}:`, error);
     return `Character ${characterNumber}`;
   }
 }
+
+const STYLE_DESCRIPTIONS: Record<string, string> = {
+  noir: "film noir style, high contrast black and white, deep dramatic shadows, 1940s detective aesthetic, heavy bold inking, moody atmospheric lighting",
+  manga:
+    "Japanese manga style, clean precise black linework, screen tone shading, expressive eyes, dynamic speed lines, black and white with impact effects",
+  superhero:
+    "classic American superhero comic style, bold vibrant colors, dynamic heroic poses, detailed muscular anatomy, Jim Lee and Jack Kirby inspired",
+  vintage:
+    "Golden Age 1950s comic style, visible halftone Ben-Day dots, limited retro color palette, nostalgic warm tones, classic adventure comics",
+  modern:
+    "contemporary digital comic art, smooth gradient coloring, detailed realistic backgrounds, cinematic widescreen composition, graphic novel quality",
+  watercolor:
+    "painted watercolor comic style, soft blended edges, flowing artistic colors, delicate linework with painted fills, ethereal atmosphere",
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
       isContinuation = false,
       previousContext = "",
     } = await request.json();
+
+    console.log("Received character image URLs:", characterImages);
 
     if (!prompt || !apiKey) {
       return NextResponse.json(
@@ -116,43 +118,20 @@ export async function POST(request: NextRequest) {
 
     let characterSection = "";
     if (characterImages.length > 0) {
-      console.log(
-        `[v0] Analyzing ${characterImages.length} character image(s)...`
-      );
-
-      const characterDescriptions = await Promise.all(
-        characterImages.map((img: string, index: number) =>
-          analyzeCharacterImage(img, apiKey, index + 1)
-        )
-      );
-
       if (characterImages.length === 1) {
         characterSection = `
-MAIN CHARACTER (MUST APPEAR IN EVERY PANEL):
-${characterDescriptions[0]}
-
-CRITICAL INSTRUCTIONS:
-- This EXACT character must appear in ALL 5 panels
-- Draw them in ${style} comic art style but keep their EXACT appearance
-- Same face, same hair, same outfit, same features in every panel
-- They are the PROTAGONIST - center of every scene`;
+CRITICAL INSTRUCTIONS FOR CHARACTER REFERENCE:
+- Use the uploaded character image as reference for the main character
+- This character must appear in ALL 5 panels as the protagonist
+- Maintain exact appearance from the reference image
+- Draw them in ${style} comic art style but preserve their features, clothing, and pose from the image`;
       } else if (characterImages.length === 2) {
         characterSection = `
-TWO MAIN CHARACTERS (BOTH MUST APPEAR TOGETHER IN MOST PANELS):
-
-CHARACTER 1 - "FIRST PERSON":
-${characterDescriptions[0]}
-
-CHARACTER 2 - "SECOND PERSON":
-${characterDescriptions[1]}
-
-CRITICAL INSTRUCTIONS:
-- BOTH characters must appear together in at least 4 of the 5 panels
-- Keep them VISUALLY DISTINCT - do not mix up their features
-- CHARACTER 1 and CHARACTER 2 are DIFFERENT PEOPLE with different appearances
-- If one is female and one is male, keep their genders correct
-- Draw both in ${style} comic art style but preserve their EXACT individual appearances
-- Each character must be immediately recognizable in every panel they appear
+CRITICAL INSTRUCTIONS FOR CHARACTER REFERENCES:
+- Use both uploaded character images as references for the two main characters
+- CHARACTER 1 (first image) and CHARACTER 2 (second image) must appear together in at least 4 of the 5 panels
+- Keep them VISUALLY DISTINCT - preserve exact appearances from their respective reference images
+- Draw both in ${style} comic art style but maintain their individual features and clothing
 - They are the two protagonists interacting with each other throughout the story`;
       }
     }
@@ -186,7 +165,7 @@ COMPOSITION:
 
     const fullPrompt = `${systemPrompt}\n\nSTORY:\n${prompt}`;
 
-    console.log("[v0] Generating comic with prompt length:", fullPrompt.length);
+    console.log("Generating comic with prompt length:", fullPrompt.length);
 
     const client = new Together({ apiKey });
 
@@ -198,10 +177,11 @@ COMPOSITION:
         width: dimensions.width,
         height: dimensions.height,
         n: 1,
-        reference_images: characterImages,
+        reference_images:
+          characterImages.length > 0 ? characterImages : undefined,
       });
     } catch (error) {
-      console.error("[v0] Together AI API error:", error);
+      console.error("Together AI API error:", error);
 
       if (error instanceof Error && "status" in error) {
         const status = (error as any).status;
@@ -243,7 +223,7 @@ COMPOSITION:
 
     return NextResponse.json({ imageUrl: response.data[0].url });
   } catch (error) {
-    console.error("[v0] Error in generate-comic API:", error);
+    console.error("Error in generate-comic API:", error);
     return NextResponse.json(
       {
         error: `Internal server error: ${

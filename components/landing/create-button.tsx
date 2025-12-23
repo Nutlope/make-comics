@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { useS3Upload } from "next-s3-upload"
 
 interface CreateButtonProps {
   prompt: string
@@ -17,6 +18,7 @@ export function CreateButton({ prompt, style, characterFiles }: CreateButtonProp
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
   const { toast } = useToast()
+  const { uploadToS3 } = useS3Upload()
 
   useEffect(() => {
     if (!isLoading) return
@@ -53,7 +55,7 @@ export function CreateButton({ prompt, style, characterFiles }: CreateButtonProp
     try {
       const apiKey = localStorage.getItem("together_api_key")
 
-      const characterUploads = await Promise.all(characterFiles.map((file) => fileToBase64(file)))
+      const characterUploads = await Promise.all(characterFiles.map((file) => uploadToS3(file).then(({ url }) => url)))
 
       if (!apiKey) {
         const comicData = {
@@ -77,7 +79,7 @@ export function CreateButton({ prompt, style, characterFiles }: CreateButtonProp
           prompt,
           apiKey,
           style,
-          characterImages: characterUploads, // Send base64 images to API
+          characterImages: characterUploads, // Send S3 URLs to API
         }),
       })
 
@@ -113,7 +115,7 @@ export function CreateButton({ prompt, style, characterFiles }: CreateButtonProp
         router.push("/editor")
       }, 1000)
     } catch (error) {
-      console.error("[v0] Error creating comic:", error)
+      console.error("Error creating comic:", error)
       toast({
         title: "Creation failed",
         description: error instanceof Error ? error.message : "Failed to create comic. Please try again.",
@@ -124,14 +126,7 @@ export function CreateButton({ prompt, style, characterFiles }: CreateButtonProp
     }
   }
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
+
 
   const loadingSteps = ["Enhancing prompt...", "Generating scenes...", "Creating your comic..."]
 
