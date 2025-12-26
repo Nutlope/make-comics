@@ -142,3 +142,7 @@ export async function getNextPageNumber(storyId: string): Promise<number> {
 
   return Math.max(...storyPages.map(p => p.pageNumber)) + 1;
 }
+
+export async function deletePage(pageId: string): Promise<void> {
+  await db.delete(pages).where(eq(pages.id, pageId));
+}

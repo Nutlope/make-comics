@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCw, Share, Info, Loader2 } from "lucide-react";
+import { RefreshCw, Share, Info, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 
@@ -17,10 +17,12 @@ interface PageData {
 interface ComicCanvasProps {
   page: PageData;
   pageIndex: number;
+  totalPages?: number;
   isLoading?: boolean;
   isOwner?: boolean;
   onInfoClick?: () => void;
   onRedrawClick?: () => void;
+  onDeletePage?: () => void;
   onNextPage?: () => void;
   onPrevPage?: () => void;
 }
@@ -28,10 +30,12 @@ interface ComicCanvasProps {
 export function ComicCanvas({
   page,
   pageIndex,
+  totalPages = 1,
   isLoading = false,
   isOwner = true,
   onInfoClick,
   onRedrawClick,
+  onDeletePage,
   onNextPage,
   onPrevPage,
 }: ComicCanvasProps) {
@@ -103,6 +107,17 @@ export function ComicCanvas({
                 <RefreshCw className="w-4 h-4" />
               )}
               <span>{isLoading ? "Redrawing..." : "Redraw"}</span>
+            </Button>
+          )}
+
+          {isOwner && totalPages > 1 && onDeletePage && (
+            <Button
+              variant="ghost"
+              className="hover:bg-red-600/20 text-muted-foreground hover:text-red-400 gap-2 text-xs h-9 px-3"
+              onClick={onDeletePage}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete</span>
             </Button>
           )}
         </div>

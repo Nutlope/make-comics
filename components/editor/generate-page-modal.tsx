@@ -13,15 +13,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { validateFileForUpload, generateFilePreview } from "@/lib/file-utils";
+import { useS3Upload } from "next-s3-upload";
 
 interface GeneratePageModalProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerate: (data: {
     prompt: string;
-    characterFiles?: File[];
     characterUrls?: string[];
-  }) => void;
+  }) => Promise<void>;
   pageNumber: number;
   isRedrawMode?: boolean;
   existingPrompt?: string;
@@ -42,6 +42,7 @@ export function GeneratePageModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { uploadToS3 } = useS3Upload();
 
   // Reset form when modal opens
   useEffect(() => {
@@ -55,11 +56,14 @@ export function GeneratePageModal({
   }, [isOpen, isRedrawMode, existingPrompt]);
 
   // Keyboard shortcut for form submission (disabled during generation)
-  useKeyboardShortcut(() => {
-    if (isOpen && !isGenerating && prompt.trim()) {
-      handleGenerate();
-    }
-  }, { disabled: !isOpen || isGenerating });
+  useKeyboardShortcut(
+    () => {
+      if (isOpen && !isGenerating && prompt.trim()) {
+        handleGenerate();
+      }
+    },
+    { disabled: !isOpen || isGenerating }
+  );
 
   const handleFiles = async (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -112,29 +116,30 @@ export function GeneratePageModal({
     if (!prompt.trim()) return;
     setIsGenerating(true);
 
-    const fileDataUrls = await Promise.all(
-      uploadedFiles.map((file) => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const base64 = e.target?.result as string;
-            const [header, base64Data] = base64.split(",");
-            // Send just the base64 data without the data URL prefix
-            resolve(base64Data);
-          };
-          reader.readAsDataURL(file);
-        });
-      })
-    );
+    try {
+      // Upload files to S3 and get URLs
+      const characterUrls = await Promise.all(
+        uploadedFiles.map((file) => uploadToS3(file).then(({ url }) => url))
+      );
 
-    onGenerate({
-      prompt,
-      characterFiles: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-      characterUrls: fileDataUrls,
-    });
+      await onGenerate({
+        prompt,
+        characterUrls: characterUrls.length > 0 ? characterUrls : undefined,
+      });
+    } catch (error) {
+      console.error("Error generating page:", error);
+      toast({
+        title: "Generation failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to generate page. Please try again.",
+        variant: "destructive",
+        duration: 4000,
+      });
+      setIsGenerating(false);
+    }
   };
-
-
 
   const handleOpenChange = (open: boolean) => {
     // Prevent closing the modal if generation is running
@@ -150,9 +155,14 @@ export function GeneratePageModal({
         <DialogContent className="border border-border/50 rounded-lg bg-background max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl text-white font-heading">
-              {isRedrawMode ? `Redraw Page ${pageNumber}` : `Generate Page ${pageNumber}`}
+              {isRedrawMode
+                ? `Redraw Page ${pageNumber}`
+                : `Generate Page ${pageNumber}`}
             </DialogTitle>
-            <DialogClose disabled={isGenerating} className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <DialogClose
+              disabled={isGenerating}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+            >
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </DialogClose>
@@ -171,7 +181,11 @@ export function GeneratePageModal({
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={isRedrawMode ? "Tweak the prompt to improve this page..." : "Continue the story... Describe what happens next."}
+                  placeholder={
+                    isRedrawMode
+                      ? "Tweak the prompt to improve this page..."
+                      : "Continue the story... Describe what happens next."
+                  }
                   disabled={isGenerating}
                   className="w-full bg-transparent border-none text-sm text-white placeholder-muted-foreground/50 focus:ring-0 focus:outline-none resize-none h-20 leading-relaxed tracking-tight"
                 />
@@ -196,8 +210,8 @@ export function GeneratePageModal({
                               </button>
                               <button
                                 onClick={(e) => {
-                                  e.stopPropagation()
-                                  removeFile(index)
+                                  e.stopPropagation();
+                                  removeFile(index);
                                 }}
                                 disabled={isGenerating}
                                 className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity disabled:opacity-50"
@@ -208,7 +222,9 @@ export function GeneratePageModal({
                           ))}
                           {uploadedFiles.length < 2 && (
                             <button
-                              onClick={() => !isGenerating && fileInputRef.current?.click()}
+                              onClick={() =>
+                                !isGenerating && fileInputRef.current?.click()
+                              }
                               disabled={isGenerating}
                               className="w-8 h-8 rounded-md border border-dashed border-border/50 hover:border-indigo/50 flex items-center justify-center text-muted-foreground hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -218,7 +234,9 @@ export function GeneratePageModal({
                         </div>
                       ) : (
                         <button
-                          onClick={() => !isGenerating && fileInputRef.current?.click()}
+                          onClick={() =>
+                            !isGenerating && fileInputRef.current?.click()
+                          }
                           disabled={isGenerating}
                           className="flex items-center gap-2 text-xs text-muted-foreground hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -244,8 +262,7 @@ export function GeneratePageModal({
             <div className="text-xs text-muted-foreground/70">
               {isRedrawMode
                 ? "This will replace the current page with a new version. Previous pages and characters are automatically referenced."
-                : "Automatically references previous pages and existing characters from your story."
-              }
+                : "Automatically references previous pages and existing characters from your story."}
             </div>
 
             <Button
@@ -256,7 +273,9 @@ export function GeneratePageModal({
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{isRedrawMode ? "Redrawing page..." : "Generating page..."}</span>
+                  <span>
+                    {isRedrawMode ? "Redrawing page..." : "Generating page..."}
+                  </span>
                 </>
               ) : (
                 `${isRedrawMode ? "Redraw" : "Generate"} Page ${pageNumber}`

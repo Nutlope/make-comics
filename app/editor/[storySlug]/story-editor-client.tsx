@@ -11,6 +11,16 @@ import { ApiKeyModal } from "@/components/api-key-modal";
 import { PageInfoSheet } from "@/components/editor/page-info-sheet";
 import { GeneratePageModal } from "@/components/editor/generate-page-modal";
 import { StoryLoader } from "@/components/ui/story-loader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PageData {
   id: number; // pageNumber for component compatibility
@@ -43,6 +53,8 @@ export function StoryEditorClient() {
   const [showApiModal, setShowApiModal] = useState(false);
   const [showInfoSheet, setShowInfoSheet] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<number | null>(null);
   const [loadingPageId, setLoadingPageId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [existingCharacterImages, setExistingCharacterImages] = useState<
@@ -207,6 +219,67 @@ export function StoryEditorClient() {
     setShowApiModal(true);
   };
 
+  const handleDeletePage = (pageIndex: number) => {
+    setPageToDelete(pageIndex);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePage = async () => {
+    if (pageToDelete === null) return;
+
+    const pageData = pages[pageToDelete];
+    if (!pageData) return;
+
+    setShowDeleteDialog(false);
+
+    try {
+      const response = await fetch("/api/delete-page", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          storySlug: story?.slug,
+          pageId: pageData.dbId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete page");
+      }
+
+      // Remove the page from state
+      setPages((prevPages) => {
+        const newPages = prevPages.filter((_, index) => index !== pageToDelete);
+        // Adjust currentPage if necessary
+        if (currentPage >= newPages.length) {
+          setCurrentPage(Math.max(0, newPages.length - 1));
+        } else if (currentPage > pageToDelete) {
+          setCurrentPage(currentPage - 1);
+        }
+        return newPages;
+      });
+
+      toast({
+        title: "Page deleted successfully",
+        description: "The page has been removed from your comic.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error deleting page:", error);
+      toast({
+        title: "Failed to delete page",
+        description:
+          error instanceof Error ? error.message : "Failed to delete page",
+        variant: "destructive",
+        duration: 4000,
+      });
+    } finally {
+      setPageToDelete(null);
+    }
+  };
+
   const handleApiKeySubmit = (key: string) => {
     setApiKey(key);
     setShowApiModal(false);
@@ -218,61 +291,49 @@ export function StoryEditorClient() {
 
   const handleGeneratePage = async (data: {
     prompt: string;
-    characterFiles?: File[];
     characterUrls?: string[];
-  }) => {
-    try {
-      if (!apiKey) {
-        setShowApiModal(true);
-        return;
-      }
-
-      // Add new page mode
-      const response = await fetch("/api/add-page", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          storyId: story?.slug,
-          prompt: data.prompt,
-          characterImages: data.characterUrls || [],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate page");
-      }
-
-      const result = await response.json();
-
-      setPages((prevPages) => [
-        ...prevPages,
-        {
-          id: pages.length + 1,
-          title: story?.title || "",
-          image: result.imageUrl,
-          prompt: data.prompt,
-          characterUploads: data.characterUrls || [],
-          style: story?.style || "noir",
-          dbId: result.pageId,
-        },
-      ]);
-      setCurrentPage(pages.length);
-
-      setShowGenerateModal(false);
-    } catch (error) {
-      console.error("Error generating page:", error);
-      toast({
-        title: "Failed to generate page",
-        description:
-          error instanceof Error ? error.message : "Failed to generate page",
-        variant: "destructive",
-        duration: 4000,
-      });
+  }): Promise<void> => {
+    if (!apiKey) {
+      setShowApiModal(true);
+      throw new Error("API key required");
     }
+
+    // Add new page mode
+    const response = await fetch("/api/add-page", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        storyId: story?.slug,
+        prompt: data.prompt,
+        characterImages: data.characterUrls || [],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to generate page");
+    }
+
+    const result = await response.json();
+
+    setPages((prevPages) => [
+      ...prevPages,
+      {
+        id: pages.length + 1,
+        title: story?.title || "",
+        image: result.imageUrl,
+        prompt: data.prompt,
+        characterUploads: data.characterUrls || [],
+        style: story?.style || "noir",
+        dbId: result.pageId,
+      },
+    ]);
+    setCurrentPage(pages.length);
+
+    setShowGenerateModal(false);
   };
 
   if (isLoading) {
@@ -312,10 +373,12 @@ export function StoryEditorClient() {
         <ComicCanvas
           page={pages[currentPage]}
           pageIndex={currentPage}
+          totalPages={pages.length}
           isLoading={loadingPageId === currentPage}
           isOwner={isOwner}
           onInfoClick={() => setShowInfoSheet(true)}
           onRedrawClick={handleRedrawPage}
+          onDeletePage={() => handleDeletePage(currentPage)}
           onNextPage={() =>
             setCurrentPage((prev) =>
               prev < pages.length - 1 ? prev + 1 : prev
@@ -343,6 +406,27 @@ export function StoryEditorClient() {
         onClose={() => setShowInfoSheet(false)}
         page={pages[currentPage]}
       />
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Page</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete page {pageToDelete !== null ? pageToDelete + 1 : ""}?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePage}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
