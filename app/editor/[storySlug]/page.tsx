@@ -19,11 +19,14 @@ export async function generateMetadata({
       };
     }
 
-    const { story } = result;
+    const { story, pages } = result;
     const title = `${story.title} | MakeComics`;
     const description =
       story.description ||
       `${story.title} - Create your own comic book with MakeComics`;
+
+    // Use the first page's image as the Open Graph image, or default if none
+    const firstPageImage = pages.length > 0 && pages[0].generatedImageUrl ? pages[0].generatedImageUrl : "/placeholder.jpg";
 
     return {
       title,
@@ -32,6 +35,7 @@ export async function generateMetadata({
         title,
         description,
         type: "website",
+        images: [firstPageImage],
       },
     };
   } catch (error) {
