@@ -22,7 +22,7 @@ export function EditorToolbar({
           variant="ghost"
           size="icon"
           onClick={() => router.push("/stories")}
-          className="hover:bg-secondary text-muted-foreground hover:text-white flex-shrink-0"
+          className="hover:bg-secondary text-muted-foreground hover:text-white shrink-0"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
@@ -32,7 +32,7 @@ export function EditorToolbar({
         </h1>
       </div>
 
-       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
          <Button
            variant="ghost"
            className="hover:bg-secondary text-muted-foreground hover:text-white gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 hidden md:flex"

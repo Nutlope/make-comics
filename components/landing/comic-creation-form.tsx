@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useS3Upload } from "next-s3-upload";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { COMIC_STYLES } from "@/lib/constants";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 
 interface ComicCreationFormProps {
   prompt: string;
@@ -68,27 +69,12 @@ export function ComicCreationForm({
     }
   }, []);
 
-  useEffect(() => {
-    if (!isLoading) return;
-
-    const steps = [
-      "Enhancing prompt...",
-      "Generating scenes...",
-      "Creating your comic...",
-    ];
-    let currentStep = 0;
-
-    const interval = setInterval(() => {
-      currentStep += 1;
-      if (currentStep < steps.length) {
-        setLoadingStep(currentStep);
-      } else {
-        clearInterval(interval);
-      }
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [isLoading]);
+  // Keyboard shortcut for form submission
+  useKeyboardShortcut(() => {
+    if (!isLoading && prompt.trim()) {
+      handleCreate();
+    }
+  }, { disabled: isLoading });
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -228,7 +214,6 @@ export function ComicCreationForm({
             ref={textareaRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="A cyberpunk detective standing in neon rain, holding a glowing datapad, moody lighting, noir style..."
             disabled={isLoading}
             className="w-full bg-transparent border-none text-sm text-white placeholder-muted-foreground/50 focus:ring-0 focus:outline-none resize-none h-16 leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { validateFileForUpload, generateFilePreview } from "@/lib/file-utils";
 import { COMIC_STYLES } from "@/lib/constants";
 
@@ -48,6 +49,13 @@ export function GeneratePageModal({
       setIsGenerating(false);
     }
   }, [isOpen]);
+
+  // Keyboard shortcut for form submission
+  useKeyboardShortcut(() => {
+    if (isOpen && !isGenerating && prompt.trim()) {
+      handleGenerate();
+    }
+  }, { disabled: !isOpen || isGenerating });
 
   const handleFiles = async (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -242,14 +250,14 @@ export function GeneratePageModal({
       {/* Character Preview Modal */}
       {showPreview !== null && previews[showPreview] && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
           onClick={() => setShowPreview(null)}
         >
-          <div className="relative max-w-sm max-h-[80vh] glass-panel p-4 rounded-xl z-[101]">
+          <div className="relative max-w-sm max-h-[80vh] glass-panel p-4 rounded-xl z-101">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8 hover:bg-white/10 z-[102]"
+              className="absolute top-2 right-2 h-8 w-8 hover:bg-white/10 z-102"
               onClick={() => setShowPreview(null)}
             >
               <X className="w-4 h-4" />
