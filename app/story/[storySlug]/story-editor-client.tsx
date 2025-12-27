@@ -135,13 +135,19 @@ export function StoryEditorClient() {
         return;
       }
 
-      if (e.key === "ArrowRight") {
-        setCurrentPage((prev) => (prev < pages.length - 1 ? prev + 1 : prev));
-      } else if (e.key === "ArrowLeft") {
-        setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
-      } else if (e.key === "i" || e.key === "I") {
-        setShowInfoSheet(true);
-      }
+       if (e.key === "ArrowRight") {
+         setCurrentPage((prev) => (prev < pages.length - 1 ? prev + 1 : prev));
+       } else if (e.key === "ArrowLeft") {
+         setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
+       } else if (e.key === "ArrowUp") {
+         setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
+       } else if (e.key === "ArrowDown") {
+         setCurrentPage((prev) => (prev < pages.length - 1 ? prev + 1 : prev));
+       } else if (e.key === "i" || e.key === "I") {
+         setShowInfoSheet(true);
+       } else if (e.key === "c" || e.key === "C") {
+         handleAddPage();
+       }
     };
 
     window.addEventListener("keydown", handleKeyDown);

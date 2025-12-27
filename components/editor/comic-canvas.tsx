@@ -46,11 +46,11 @@ export function ComicCanvas({
       {/* Dot grid background */}
       <div className="absolute inset-0 dot-grid opacity-20" />
 
-      <div className="relative z-10 w-full max-w-xl">
-        <div
-          className="bg-white w-full p-3 shadow-2xl rounded-sm mx-auto group"
-          style={{ maxWidth: "512px" }}
-        >
+       <div className="relative z-10 w-full max-w-xl">
+         <div
+           className="bg-white w-full p-3 shadow-2xl rounded-sm mx-auto group"
+           style={{ maxWidth: "512px" }}
+         >
           <div className="w-full border-4 border-black overflow-hidden relative aspect-3/4">
             <div className="w-full h-full bg-neutral-900">
               <img
@@ -78,10 +78,10 @@ export function ComicCanvas({
             <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/70 text-[9px] text-white font-mono uppercase tracking-widest border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               Page {page.id}
             </div>
-          </div>
-        </div>
+           </div>
+         </div>
 
-        {/* Action buttons below the page image */}
+         {/* Action buttons below the page image */}
         <div className="hidden md:flex items-center justify-center gap-2 mt-4">
           {onInfoClick && (
             <Button

@@ -64,16 +64,16 @@ export function EditorToolbar({
           <span>Share</span>
         </Button>
 
-        {isOwner && onContinueStory && (
-          <Button
-            onClick={onContinueStory}
-            className="gap-1.5 sm:gap-2 text-xs bg-white hover:bg-neutral-200 text-black h-8 sm:h-9 px-3 sm:px-4"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Continue story</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
-        )}
+         {isOwner && onContinueStory && (
+           <Button
+             onClick={onContinueStory}
+             className="relative gap-1.5 sm:gap-2 text-xs bg-white hover:bg-neutral-200 text-black h-8 sm:h-9 px-3 sm:px-4"
+           >
+             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+             <span className="hidden sm:inline">Continue story <span className="text-gray-500 text-[10px]">(C)</span></span>
+             <span className="sm:hidden">Add</span>
+           </Button>
+         )}
       </div>
     </header>
   );
