@@ -22,7 +22,8 @@ export function Navbar() {
 
   const isOnStoriesPage = pathname === "/stories";
 
-  if (!isLoaded) return null;
+  if (!isLoaded)
+    return <div className="h-14 sm:h-16 w-full  border-b border-border/50" />;
 
   return (
     <>
