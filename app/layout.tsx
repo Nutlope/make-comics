@@ -1,16 +1,16 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter, Atma, Space_Grotesk, Instrument_Serif } from "next/font/google";
+import { Inter, Bangers, Space_Grotesk, Instrument_Serif } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const atma = Atma({
-  weight: ["400", "500", "600", "700"],
+const bangers = Bangers({
+  weight: "400",
   subsets: ["latin"],
-  variable: "--font-atma",
+  variable: "--font-bangers",
 });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -37,7 +37,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${inter.variable} ${atma.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
+        className={`${inter.variable} ${bangers.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
       >
         <body className="font-sans antialiased">
           {children}

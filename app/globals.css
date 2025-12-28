@@ -48,7 +48,7 @@
 @theme inline {
   /* Adding tight tracking to Inter font for consistency */
   --font-sans: "Inter", sans-serif;
-  --font-display: "Atma", cursive;
+  --font-display: "Bangers", cursive;
   --font-heading: "Instrument Serif", serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -149,7 +149,7 @@
 }
 
 .font-display {
-  font-family: "Atma", cursive;
+  font-family: "Bangers", cursive;
 }
 
 /* Smooth fade-in animation */

@@ -83,7 +83,9 @@ export function ApiKeyModal({ isOpen, onClose, onSubmit }: ApiKeyModalProps) {
               type="password"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder={existingKey ? "Your current API key" : "Enter your API key..."}
+              placeholder={
+                existingKey ? "Your current API key" : "Enter your API key..."
+              }
               className="bg-secondary border-border/50 text-white placeholder-muted-foreground py-5 pr-10"
             />
             {apiKeyInput && (

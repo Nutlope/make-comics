@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeft, RefreshCw, Share, Plus, Info, Download } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Share,
+  Plus,
+  Info,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
@@ -50,16 +57,19 @@ export function EditorToolbar({
     const newTitle = editingTitle.trim();
     if (newTitle && newTitle !== title) {
       try {
-        const response = await fetch(`/api/stories/${window.location.pathname.split('/').pop()}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ title: newTitle }),
-        });
+        const response = await fetch(
+          `/api/stories/${window.location.pathname.split("/").pop()}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title: newTitle }),
+          }
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to update title');
+          throw new Error("Failed to update title");
         }
 
         onTitleUpdate?.(newTitle);
@@ -69,7 +79,7 @@ export function EditorToolbar({
           duration: 2000,
         });
       } catch (error) {
-        console.error('Error updating title:', error);
+        console.error("Error updating title:", error);
         toast({
           title: "Failed to update title",
           description: "Could not update the story title.",
@@ -88,9 +98,9 @@ export function EditorToolbar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleTitleSave();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       handleTitleCancel();
     }
   };
@@ -120,7 +130,11 @@ export function EditorToolbar({
           />
         ) : (
           <h1
-            className={`text-sm sm:text-base text-white font-normal tracking-[-0.02em] truncate ${isOwner && onTitleUpdate ? 'cursor-pointer hover:text-gray-300' : ''}`}
+            className={`text-sm sm:text-base text-white font-display font-normal tracking-[-0.02em] truncate ${
+              isOwner && onTitleUpdate
+                ? "cursor-pointer hover:text-gray-300"
+                : ""
+            }`}
             onClick={handleTitleClick}
           >
             {title}
@@ -129,55 +143,58 @@ export function EditorToolbar({
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-         <Button
-           variant="ghost"
-           className="hover:bg-secondary text-muted-foreground hover:text-white gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 hidden md:flex"
-           onClick={async () => {
-             const url = window.location.href;
-             try {
-               await navigator.clipboard.writeText(url);
-               toast({
-                 title: "Link copied!",
-                 description: "Story URL has been copied to your clipboard.",
-                 duration: 2000,
-               });
-             } catch (err) {
-               console.error("Failed to copy URL:", err);
-               toast({
-                 title: "Failed to copy",
-                 description: "Could not copy the URL to clipboard.",
-                 variant: "destructive",
-                 duration: 3000,
-               });
-             }
-           }}
-         >
-           <Share className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-           <span>Share</span>
-         </Button>
+        <Button
+          variant="ghost"
+          className="hover:bg-secondary text-muted-foreground hover:text-white gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3 hidden md:flex"
+          onClick={async () => {
+            const url = window.location.href;
+            try {
+              await navigator.clipboard.writeText(url);
+              toast({
+                title: "Link copied!",
+                description: "Story URL has been copied to your clipboard.",
+                duration: 2000,
+              });
+            } catch (err) {
+              console.error("Failed to copy URL:", err);
+              toast({
+                title: "Failed to copy",
+                description: "Could not copy the URL to clipboard.",
+                variant: "destructive",
+                duration: 3000,
+              });
+            }
+          }}
+        >
+          <Share className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span>Share</span>
+        </Button>
 
-         {onDownloadPDF && (
-           <Button
-             variant="ghost"
-             className="hover:bg-secondary text-muted-foreground hover:text-white gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3"
-             onClick={onDownloadPDF}
-             disabled={isGeneratingPDF}
-           >
-             <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-             <span>{isGeneratingPDF ? 'Generating...' : 'Download PDF'}</span>
-           </Button>
-         )}
+        {onDownloadPDF && (
+          <Button
+            variant="ghost"
+            className="hover:bg-secondary text-muted-foreground hover:text-white gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3"
+            onClick={onDownloadPDF}
+            disabled={isGeneratingPDF}
+          >
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>{isGeneratingPDF ? "Generating..." : "Download PDF"}</span>
+          </Button>
+        )}
 
-         {isOwner && onContinueStory && (
-           <Button
-             onClick={onContinueStory}
-             className="relative gap-1.5 sm:gap-2 text-xs bg-white hover:bg-neutral-200 text-black h-8 sm:h-9 px-3 sm:px-4"
-           >
-             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-             <span className="hidden sm:inline">Continue story <span className="text-gray-500 text-[10px]">(C)</span></span>
-             <span className="sm:hidden">Add</span>
-           </Button>
-         )}
+        {isOwner && onContinueStory && (
+          <Button
+            onClick={onContinueStory}
+            className="relative gap-1.5 sm:gap-2 text-xs bg-white hover:bg-neutral-200 text-black h-8 sm:h-9 px-3 sm:px-4"
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">
+              Continue story{" "}
+              <span className="text-gray-500 text-[10px]">(C)</span>
+            </span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        )}
       </div>
     </header>
   );

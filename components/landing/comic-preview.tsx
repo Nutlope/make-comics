@@ -156,7 +156,7 @@ export function ComicPreview({
           </div>
         </div>
 
-        <div className="hidden lg:flex absolute -right-20 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+        <div className="hidden lg:flex absolute -right-20 top-1/2 -translate-y-1/2 lg:flex-col gap-3">
           <button
             onClick={() => goToPage(1)}
             className={`w-8 h-8 rounded-full glass-panel flex items-center justify-center shadow-lg cursor-pointer transition-all duration-200 ${

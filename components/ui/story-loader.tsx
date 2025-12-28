@@ -27,10 +27,10 @@ export function StoryLoader({ text = "Loading story..." }: StoryLoaderProps) {
           src={`/loader/${loaderSvgs[currentSvgIndex]}`}
           alt="Loading..."
           className="w-full h-full object-contain animate-pulse transition-all duration-700 ease-in-out transform"
-          style={{ filter: 'invert(1)' }}
+          style={{ filter: "invert(1)" }}
         />
       </div>
-      <div className="text-white text-lg">{text}</div>
+      <div className="text-white text-2xl font-display">{text}</div>
     </div>
   );
 }
