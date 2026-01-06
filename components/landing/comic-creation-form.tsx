@@ -6,7 +6,7 @@ import { Upload, X, Check, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useS3Upload } from "next-s3-upload";
-import { useAuth, SignInButton } from "@clerk/nextjs";
+import { useAuth, SignInButton, useClerk } from "@clerk/nextjs";
 import { COMIC_STYLES } from "@/lib/constants";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { useApiKey } from "@/hooks/use-api-key";
@@ -38,6 +38,7 @@ export function ComicCreationForm({
   const { toast } = useToast();
   const { uploadToS3 } = useS3Upload();
   const { isSignedIn, isLoaded } = useAuth();
+  const { openSignIn } = useClerk();
   const [apiKey] = useApiKey();
   const hasApiKey = !!apiKey;
   const [previews, setPreviews] = useState<string[]>([]);
@@ -45,6 +46,8 @@ export function ComicCreationForm({
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const PROMPT_STORAGE_KEY = 'comic-prompt-draft';
 
 
   useEffect(() => {
@@ -60,12 +63,31 @@ export function ComicCreationForm({
     }
   }, []);
 
+  // Persist prompt to localStorage
+  useEffect(() => {
+    if (prompt) {
+      localStorage.setItem(PROMPT_STORAGE_KEY, prompt);
+    }
+  }, [prompt]);
+
+  // Restore prompt from localStorage only once on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(PROMPT_STORAGE_KEY);
+    if (saved && !prompt) {
+      setPrompt(saved);
+    }
+  }, []); // Run only on mount
+
   // Keyboard shortcut for form submission
   useKeyboardShortcut(() => {
     if (!isLoading && prompt.trim()) {
-      handleCreate();
+      if (!isSignedIn) {
+        openSignIn();
+      } else {
+        handleCreate();
+      }
     }
-  }, { disabled: isLoading });
+  }, { disabled: isLoading || !isLoaded });
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
@@ -168,6 +190,8 @@ export function ComicCreationForm({
 
       const result = await response.json();
 
+      // Clear the draft since submission was successful
+      localStorage.removeItem(PROMPT_STORAGE_KEY);
       // Redirect to the story editor using slug
       router.push(`/story/${result.storySlug}`);
     } catch (error) {

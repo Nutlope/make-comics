@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useApiKey } from "@/hooks/use-api-key";
+import { useAuth } from "@clerk/nextjs";
 import { EditorToolbar } from "@/components/editor/editor-toolbar";
 import { PageSidebar } from "@/components/editor/page-sidebar";
 import { ComicCanvas } from "@/components/editor/comic-canvas";
@@ -45,6 +46,7 @@ interface StoryData {
 export function StoryEditorClient() {
   const params = useParams();
   const slug = params.storySlug as string;
+  const { isSignedIn, isLoaded } = useAuth();
 
   const [story, setStory] = useState<StoryData | null>(null);
   const [isOwner, setIsOwner] = useState<boolean>(false);
@@ -161,6 +163,9 @@ export function StoryEditorClient() {
   }, [pages.length]);
 
   const handleAddPage = () => {
+    if (!isLoaded || !isSignedIn) {
+      return;
+    }
     if (!apiKey && pages.length >= 1) {
       setShowApiModal(true);
       return;
@@ -169,6 +174,9 @@ export function StoryEditorClient() {
   };
 
   const handleRedrawPage = () => {
+    if (!isLoaded || !isSignedIn) {
+      return;
+    }
     if (!apiKey) {
       setShowApiModal(true);
       return;
