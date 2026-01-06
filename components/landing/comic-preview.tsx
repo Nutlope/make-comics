@@ -16,7 +16,7 @@ export function ComicPreview({
           <div className="bg-white w-48 aspect-3/4 p-2 shadow-2xl rounded-sm rotate-12">
             <div className="w-full h-full bg-neutral-900 border-2 border-black overflow-hidden">
               <img
-                src="/manga.jpg"
+                src="/manga.png"
                 alt="Background comic"
                 className="w-full h-full object-cover opacity-60"
               />
@@ -96,7 +96,7 @@ export function ComicPreview({
                   }`}
                 >
                   <img
-                    src="/manga.jpg"
+                    src="/manga.png"
                     alt="Comic preview page 2"
                     className="w-full h-full object-cover opacity-80 grayscale-20 contrast-125"
                   />
