@@ -26,9 +26,9 @@ export const metadata: Metadata = {
   title: "MakeComics - AI Comic Generator",
   description:
     "Create stunning AI-generated comics in seconds. Choose your style, describe your story, and watch the magic happen.",
-    openGraph:{
-      images: "https://make-comics.vercel.app/og.png"
-    }
+  openGraph: {
+    images: "https://www.makecomics.io/og.png"
+  }
 };
 
 export default function RootLayout({

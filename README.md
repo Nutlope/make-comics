@@ -1,4 +1,4 @@
-<a href="https://make-comics.vercel.app">
+<a href="https://www.makecomics.io/">
   <img alt="Make Comics" src="./public/og.png">
   <h1 align="center">Make Comics</h1>
 </a>

@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
     const storySlug = searchParams.get("storySlug");
 
     if (!storySlug) {
-      return NextResponse.json({ error: "Story slug required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Story slug required" },
+        { status: 400 },
+      );
     }
 
     const result = await getStoryWithPagesBySlug(storySlug);
@@ -23,7 +26,10 @@ export async function GET(request: NextRequest) {
       .filter((url: string) => url && url !== "/placeholder.svg");
 
     if (images.length === 0) {
-      return NextResponse.json({ error: "No images to download" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No images to download" },
+        { status: 400 },
+      );
     }
 
     // Fetch all images server-side
@@ -45,37 +51,42 @@ export async function GET(request: NextRequest) {
       if (i > 0) pdf.addPage();
 
       const imgBuffer = imageBuffers[i];
-      const imgData = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
+      const imgData = `data:image/jpeg;base64,${imgBuffer.toString("base64")}`;
 
       // For simplicity, assume images fit the page; in production you might want to scale
-      pdf.addImage(imgData, 'JPEG', 10, 10, 190, 277); // A4 portrait size minus margins
+      pdf.addImage(imgData, "JPEG", 10, 10, 190, 277); // A4 portrait size minus margins
 
       // Add "Created by Make Comics" at the bottom
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFont("helvetica", "bold");
       pdf.setFontSize(12);
-      const text = 'Created by Make Comics';
+      const text = "Created by Make Comics [makecomics.io]";
       const textX = 105;
       const textY = 290;
-      pdf.text(text, textX, textY, { align: 'center' });
+      pdf.text(text, textX, textY, { align: "center" });
       const dimensions = pdf.getTextDimensions(text);
-      pdf.link(textX - dimensions.w / 2, textY - dimensions.h / 2, dimensions.w, dimensions.h, { url: 'https://make-comics.vercel.app/' });
+      pdf.link(
+        textX - dimensions.w / 2,
+        textY - dimensions.h / 2,
+        dimensions.w,
+        dimensions.h,
+        { url: "https://www.makecomics.io/" },
+      );
     }
 
-    const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+    const pdfBuffer = Buffer.from(pdf.output("arraybuffer"));
 
     // Return PDF as response
     return new NextResponse(pdfBuffer, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${story.title}.pdf"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${story.title}.pdf"`,
       },
     });
-
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error("Error generating PDF:", error);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
