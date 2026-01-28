@@ -23,7 +23,7 @@ The AI references previous pages as visual reference for coherence and uses char
 
 ## Cloning & running
 
-1. Clone the repo: `git clone https://github.com/yourusername/make-comics`
+1. Clone the repo: `git clone https://github.com/nutlope/make-comics`
 2. Create a `.env` file based on `.example.env` and add your API keys:
    - **Together AI API key**: `TOGETHER_API_KEY=<your_together_ai_api_key>`
    - **AWS S3 credentials**: `S3_UPLOAD_KEY`, `S3_UPLOAD_SECRET`, `S3_UPLOAD_BUCKET`, `S3_UPLOAD_REGION`

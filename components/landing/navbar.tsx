@@ -25,7 +25,7 @@ export function Navbar() {
     async function fetchStars() {
       try {
         const res = await fetch(
-          "https://api.github.com/repos/Nutlope/aicommits",
+          "https://api.github.com/repos/nutlope/make-comics",
           {
             headers: {
               Accept: "application/vnd.github+json",
@@ -82,17 +82,17 @@ export function Navbar() {
             </span>
           </button>
 
-           <Link
-             href="https://github.com/Nutlope/make-comics"
-             target="_blank"
-             rel="noopener noreferrer"
-             className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 glass-panel glass-panel-hover transition-all text-xs rounded-md"
-           >
-             <Github className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-             <span className="text-muted-foreground text-xs sm:text-sm hidden sm:inline">
-               {stars}
-             </span>
-           </Link>
+          <Link
+            href="https://github.com/nutlope/make-comics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 glass-panel glass-panel-hover transition-all text-xs rounded-md"
+          >
+            <Github className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="text-muted-foreground text-xs sm:text-sm hidden sm:inline">
+              {stars}
+            </span>
+          </Link>
 
           <SignedOut>
             <SignInButton mode="modal">
@@ -104,15 +104,15 @@ export function Navbar() {
             </SignInButton>
           </SignedOut>
           <SignedIn>
-             {isOnStoriesPage ? (
-               <Link href="/">
-                 <button className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-white hover:bg-neutral-200 text-black transition-all text-xs rounded-md cursor-pointer font-medium">
-                   <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                   <span className="text-black text-xs sm:text-sm hidden sm:inline tracking-tight">
-                     Create New
-                   </span>
-                 </button>
-               </Link>
+            {isOnStoriesPage ? (
+              <Link href="/">
+                <button className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 bg-white hover:bg-neutral-200 text-black transition-all text-xs rounded-md cursor-pointer font-medium">
+                  <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="text-black text-xs sm:text-sm hidden sm:inline tracking-tight">
+                    Create New
+                  </span>
+                </button>
+              </Link>
             ) : (
               <Link href="/stories">
                 <button className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 glass-panel glass-panel-hover transition-all text-xs rounded-md cursor-pointer">
