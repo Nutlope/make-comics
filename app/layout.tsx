@@ -4,6 +4,7 @@ import { Inter, Bangers, Space_Grotesk, Instrument_Serif } from "next/font/googl
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider } from "@clerk/nextjs";
+import { CustomGoogleOneTap } from "@/components/auth/google-one-tap";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -43,6 +44,7 @@ export default function RootLayout({
         className={`${inter.variable} ${bangers.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
       >
         <body className="font-sans antialiased">
+          <CustomGoogleOneTap />
           {children}
           <Analytics />
           <Toaster />
