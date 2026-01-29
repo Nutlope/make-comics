@@ -73,7 +73,7 @@ export function ApiKeyModal({ isOpen, onClose, onSubmit }: ApiKeyModalProps) {
            <DialogDescription className="text-center text-muted-foreground">
              {existingKey
                ? "Update your Together API key or add a new one. You can also delete your existing key."
-               : "You've used your weekly credit! Add your Together API key for unlimited generation."}
+                : "You've used all your weekly credits! Add your Together API key for unlimited generation."}
            </DialogDescription>
         </DialogHeader>
 
