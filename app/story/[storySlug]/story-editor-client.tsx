@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { useApiKey } from "@/hooks/use-api-key";
+import { useApiKey, useModelMode } from "@/hooks/use-api-key";
 import { useAuth } from "@clerk/nextjs";
 import { EditorToolbar } from "@/components/editor/editor-toolbar";
 import { PageSidebar } from "@/components/editor/page-sidebar";
@@ -66,6 +66,7 @@ export function StoryEditorClient() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { toast } = useToast();
   const [apiKey, setApiKey] = useApiKey();
+  const [modelMode, setModelMode] = useModelMode();
 
 
   const handleTitleUpdate = (newTitle: string) => {
@@ -399,6 +400,7 @@ export function StoryEditorClient() {
   const handleGeneratePage = async (data: {
     prompt: string;
     characterUrls?: string[];
+    modelMode?: "fast" | "pro";
   }): Promise<void> => {
     if (!apiKey) {
       setShowApiModal(true);
@@ -416,6 +418,7 @@ export function StoryEditorClient() {
         storyId: story?.slug,
         prompt: data.prompt,
         characterImages: data.characterUrls || [],
+        modelMode: data.modelMode,
       }),
     });
 
@@ -530,6 +533,9 @@ export function StoryEditorClient() {
             ? pages[pages.length - 2].characterUploads || []
             : []
         }
+        hasApiKey={!!apiKey && apiKey.trim().length > 0}
+        modelMode={modelMode}
+        setModelMode={setModelMode}
       />
       <PageInfoSheet
         isOpen={showInfoSheet}

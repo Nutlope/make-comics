@@ -9,7 +9,7 @@ import { useS3Upload } from "next-s3-upload";
 import { useAuth, SignInButton, useClerk } from "@clerk/nextjs";
 import { COMIC_STYLES } from "@/lib/constants";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
-import { useApiKey } from "@/hooks/use-api-key";
+import { useApiKey, useModelMode, type ModelMode } from "@/hooks/use-api-key";
 import { isContentPolicyViolation } from "@/lib/utils";
 import { ApiKeyModal } from "@/components/api-key-modal";
 
@@ -44,7 +44,8 @@ export function ComicCreationForm({
   const { isSignedIn, isLoaded } = useAuth();
   const { openSignIn } = useClerk();
   const [apiKey, setApiKey] = useApiKey();
-  const hasApiKey = !!apiKey;
+  const [modelMode, setModelMode] = useModelMode();
+  const hasApiKey = !!apiKey && apiKey.trim().length > 0;
   const [previews, setPreviews] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState<number | null>(null);
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
@@ -57,6 +58,8 @@ export function ComicCreationForm({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const PROMPT_STORAGE_KEY = 'comic-prompt-draft';
+
+  console.log("hasApiKey", hasApiKey)
 
 
   useEffect(() => {
@@ -254,6 +257,7 @@ export function ComicCreationForm({
           ...(apiKey && { apiKey }),
           style,
           characterImages: characterUploads,
+          modelMode: hasApiKey ? modelMode : undefined,
         }),
       });
 
@@ -390,6 +394,22 @@ export function ComicCreationForm({
             </div>
 
             <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-start sm:justify-end">
+              {hasApiKey && (
+                <div className="relative dropdown-container z-60">
+                  <button
+                    onClick={() => {
+                      if (!isLoading) setModelMode(modelMode === "fast" ? "pro" : "fast");
+                    }}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-md glass-panel glass-panel-hover transition-all text-xs text-muted-foreground hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
+                  >
+                    <span className={modelMode === "pro" ? "text-indigo" : "text-green-500"}>
+                      {modelMode === "pro" ? "Pro" : "Fast"}
+                    </span>
+                  </button>
+                </div>
+              )}
+
               <div className="relative dropdown-container z-60">
                 <button
                   onClick={() => {
@@ -424,8 +444,8 @@ export function ComicCreationForm({
                           setShowStyleDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 rounded text-xs transition-colors flex items-center justify-between ${style === styleOption.id
-                            ? "bg-indigo/10 text-indigo"
-                            : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                          ? "bg-indigo/10 text-indigo"
+                          : "text-muted-foreground hover:bg-white/5 hover:text-white"
                           }`}
                       >
                         <span>{styleOption.name}</span>

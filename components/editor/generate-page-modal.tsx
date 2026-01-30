@@ -29,6 +29,7 @@ interface GeneratePageModalProps {
   onGenerate: (data: {
     prompt: string;
     characterUrls?: string[];
+    modelMode?: "fast" | "pro";
   }) => Promise<void>;
   pageNumber: number;
   isRedrawMode?: boolean;
@@ -36,6 +37,9 @@ interface GeneratePageModalProps {
   existingCharacters?: string[]; // All characters from the story
   lastPageCharacters?: string[]; // Characters used on the last page
   previousPageCharacters?: string[]; // Characters used on the previous page (if last page had < 2)
+  hasApiKey?: boolean;
+  modelMode?: "fast" | "pro";
+  setModelMode?: (mode: "fast" | "pro") => void;
 }
 
 export function GeneratePageModal({
@@ -48,6 +52,9 @@ export function GeneratePageModal({
   existingCharacters = [],
   lastPageCharacters = [],
   previousPageCharacters = [],
+  hasApiKey = false,
+  modelMode = "fast",
+  setModelMode,
 }: GeneratePageModalProps) {
   const [prompt, setPrompt] = useState("");
   const [characters, setCharacters] = useState<CharacterItem[]>([]);
@@ -268,6 +275,7 @@ export function GeneratePageModal({
       await onGenerate({
         prompt,
         characterUrls: characterUrls.length > 0 ? characterUrls : undefined,
+        modelMode: hasApiKey ? modelMode : undefined,
       });
     } catch (error) {
       console.error("Error generating page:", error);
@@ -428,11 +436,25 @@ export function GeneratePageModal({
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground/70">
-              {isRedrawMode
-                ? "Previous pages and characters automatically referenced."
-                : "Previous page automatically referenced. " +
-                  `${selectedCharacterIndices.size} selected characters.`}
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-muted-foreground/70">
+                {isRedrawMode
+                  ? "Previous pages and characters automatically referenced."
+                  : "Previous page automatically referenced. " +
+                    `${selectedCharacterIndices.size} selected characters.`}
+              </div>
+
+              {hasApiKey && (
+                <button
+                  onClick={() => setModelMode?.(modelMode === "fast" ? "pro" : "fast")}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-md glass-panel glass-panel-hover transition-all text-xs text-muted-foreground hover:text-white disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
+                >
+                  <span className={modelMode === "pro" ? "text-indigo" : "text-green-500"}>
+                    {modelMode === "pro" ? "Pro" : "Fast"}
+                  </span>
+                </button>
+              )}
             </div>
 
             <Button

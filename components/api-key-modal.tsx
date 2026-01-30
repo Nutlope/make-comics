@@ -129,7 +129,22 @@ export function ApiKeyModal({ isOpen, onClose, onSubmit }: ApiKeyModalProps) {
           </div>
         </form>
 
-        <div className="mt-4 p-3 glass-panel rounded-lg">
+        <div className="mt-4 p-3 glass-panel rounded-lg space-y-2">
+          <div className="flex items-start gap-2 text-xs">
+            <span className="text-indigo font-medium shrink-0">Pro:</span>
+            <span className="text-muted-foreground">
+              Uses Gemini 3 Pro: <span className="text-white font-medium">$0.134/image</span>
+            </span>
+          </div>
+          <div className="flex items-start gap-2 text-xs">
+            <span className="text-green-500 font-medium shrink-0">Fast:</span>
+            <span className="text-muted-foreground">
+              Uses Flash Image 2.5: <span className="text-white font-medium">$0.039/image</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-3 p-3 glass-panel rounded-lg">
           <p className="text-xs text-muted-foreground text-center">
             Your API key is stored locally and never stored on our servers.
           </p>

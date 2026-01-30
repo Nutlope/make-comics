@@ -20,3 +20,10 @@ export const COMIC_STYLES = [
     prompt: "Golden Age 1950s comic style, visible halftone Ben-Day dots, limited retro color palette, nostalgic warm tones, classic adventure comics",
   },
 ] as const;
+
+// AI Image Generation Models
+export const FAST_MODEL = "google/flash-image-2.5";
+export const PRO_MODEL = "google/gemini-3-pro-image";
+
+export const FAST_DIMENSIONS = { width: 864, height: 1184 };
+export const PRO_DIMENSIONS = { width: 896, height: 1200 };

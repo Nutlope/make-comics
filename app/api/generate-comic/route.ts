@@ -13,23 +13,19 @@ import {
   deleteStory,
 } from "@/lib/db-actions";
 import { freeTierRateLimit } from "@/lib/rate-limit";
-import { COMIC_STYLES } from "@/lib/constants";
+import {
+  COMIC_STYLES,
+  FAST_MODEL,
+  PRO_MODEL,
+  FAST_DIMENSIONS,
+  PRO_DIMENSIONS,
+} from "@/lib/constants";
 import { uploadImageToS3 } from "@/lib/s3-upload";
 import { buildComicPrompt } from "@/lib/prompt";
 import {
   isContentPolicyViolation,
   getContentPolicyErrorMessage,
 } from "@/lib/utils";
-
-const NEW_MODEL = false;
-
-const IMAGE_MODEL = NEW_MODEL
-  ? "google/gemini-3-pro-image"
-  : "google/flash-image-2.5";
-
-const FIXED_DIMENSIONS = NEW_MODEL
-  ? { width: 896, height: 1200 }
-  : { width: 864, height: 1184 };
 
 const TEXT_MODEL = "Qwen/Qwen3-Next-80B-A3B-Instruct";
 
@@ -52,6 +48,7 @@ export async function POST(request: NextRequest) {
       characterImages = [],
       isContinuation = false,
       previousContext = "",
+      modelMode = "fast",
     } = await request.json();
 
     if (!prompt) {
@@ -130,7 +127,10 @@ export async function POST(request: NextRequest) {
     // Use only the character images sent from the frontend
     referenceImages.push(...characterImages);
 
-    const dimensions = FIXED_DIMENSIONS;
+    // Determine which model and dimensions to use based on user preference
+    const useProModel = modelMode === "pro" && usesOwnApiKey;
+    const imageModel = useProModel ? PRO_MODEL : FAST_MODEL;
+    const dimensions = useProModel ? PRO_DIMENSIONS : FAST_DIMENSIONS;
 
     const fullPrompt = buildComicPrompt({
       prompt,
@@ -227,10 +227,14 @@ Only return the JSON, no other text.`;
 
     let response;
     try {
-      console.log("Starting image generation...");
+      console.log("Starting image generation for ...");
+      console.dir({
+        fullPrompt,
+        referenceImages,
+      });
       const startTime = Date.now();
       response = await client.images.generate({
-        model: IMAGE_MODEL,
+        model: imageModel,
         prompt: fullPrompt,
         width: dimensions.width,
         height: dimensions.height,
