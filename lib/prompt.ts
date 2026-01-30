@@ -69,11 +69,16 @@ CHARACTER CONSISTENCY RULES (HIGHEST PRIORITY):
 - Apply comic style to body/pose/action but preserve exact facial appearance
 - Same character must look identical across all panels they appear in
 
-TEXT AND LETTERING (CRITICAL):
-- All text in speech bubbles must be PERFECTLY CLEAR, LEGIBLE, and correctly spelled
+TEXT AND LETTERING (CRITICAL - MINIMAL TEXT POLICY):
+- Keep text to an ABSOLUTE MINIMUM - comic panels should be primarily visual storytelling
+- Maximum 1-2 speech bubbles per panel, often zero is better
+- If text appears, use only 3-5 words maximum per bubble
+- Prefer silent panels with expressive artwork over dialogue
+- Show don't tell - convey emotion through facial expressions and body language
+- All text must be PERFECTLY CLEAR, LEGIBLE, and correctly spelled
 - Use bold clean comic book lettering, large and easy to read
 - Speech bubbles: crisp white fill, solid black outline, pointed tail toward speaker
-- Keep dialogue SHORT: maximum 1-2 sentences per bubble
+- NO paragraphs, long dialogue, or excessive text in any panel
 - NO blurry, warped, or unreadable text
 
 PAGE LAYOUT:
