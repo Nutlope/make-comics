@@ -12,6 +12,7 @@ import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { useApiKey } from "@/hooks/use-api-key";
 import { isContentPolicyViolation } from "@/lib/utils";
 import { ApiKeyModal } from "@/components/api-key-modal";
+import { MAX_SYSTEM_LENGTH, MAX_USER_PROMPT } from "@/lib/prompt";
 
 interface ComicCreationFormProps {
   prompt: string;
@@ -328,9 +329,12 @@ export function ComicCreationForm({
           <textarea
             ref={textareaRef}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => setPrompt(e.target.value.slice(
+              0, MAX_USER_PROMPT))
+            }
             placeholder="A cyberpunk detective standing in neon rain, holding a glowing datapad, moody lighting, noir style..."
             disabled={isLoading}
+            maxLength={MAX_USER_PROMPT}
             className="w-full bg-transparent border-none text-sm text-white placeholder-muted-foreground/50 focus:ring-0 focus:outline-none resize-none h-16 leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
@@ -424,8 +428,8 @@ export function ComicCreationForm({
                           setShowStyleDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 rounded text-xs transition-colors flex items-center justify-between ${style === styleOption.id
-                            ? "bg-indigo/10 text-indigo"
-                            : "text-muted-foreground hover:bg-white/5 hover:text-white"
+                          ? "bg-indigo/10 text-indigo"
+                          : "text-muted-foreground hover:bg-white/5 hover:text-white"
                           }`}
                       >
                         <span>{styleOption.name}</span>

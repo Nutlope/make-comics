@@ -1,5 +1,12 @@
 import { COMIC_STYLES } from "./constants";
 
+// Together AI has a 45000 character limit for the prompt parameter
+// We use 40k total to keep a larger safety margin
+export const MAX_PROMPT_LENGTH = 40000;
+export const MAX_SYSTEM_LENGTH = 35000; // Reserve 5,000 for user's prompt
+
+export const MAX_USER_PROMPT = MAX_PROMPT_LENGTH - MAX_SYSTEM_LENGTH;
+
 export function buildComicPrompt({
   prompt,
   style,
@@ -28,11 +35,37 @@ export function buildComicPrompt({
   }
 
   if (isAddPage && previousPages.length > 0) {
-    const storyHistory = previousPages
-      .map((page, index) => `Page ${index + 1}: ${page.prompt}`)
-      .join("\n");
-
-    continuationContext = `\nSTORY CONTINUATION CONTEXT:\nThis is a continuation of an existing comic story. Here are the previous pages:\n${storyHistory}\n\nThe new page should naturally continue this story. Maintain the same characters, setting, and narrative style. Reference previous events and build upon them.\n`;
+    // Limit previous pages to fit within MAX_SYSTEM_LENGTH
+    // Start with most recent pages and work backwards
+    const header = `\nSTORY CONTINUATION CONTEXT:\nThis is page ${previousPages.length + 1} of an existing comic story. Here are the recent pages for context:\n`;
+    const footer = `\n\nThe new page should naturally continue this story. Maintain the same characters, setting, and narrative style. Reference previous events and build upon them.\n`;
+    
+    // Calculate available space for previous pages (reserve space for rest of system prompt)
+    const basePromptLength = 2500; // Approximate length of system prompt without previous pages
+    const availableSpace = MAX_SYSTEM_LENGTH - basePromptLength - header.length - footer.length;
+    
+    const selectedPages: string[] = [];
+    let currentLength = 0;
+    
+    // Add pages from most recent backwards until we run out of space
+    for (let i = previousPages.length - 1; i >= 0; i--) {
+      const pageEntry = `Page ${i + 1}: ${previousPages[i].prompt}`;
+      const entryLength = pageEntry.length + (selectedPages.length > 0 ? 1 : 0); // +1 for newline
+      
+      if (currentLength + entryLength <= availableSpace) {
+        selectedPages.unshift(pageEntry);
+        currentLength += entryLength;
+      } else {
+        break;
+      }
+    }
+    
+    if (selectedPages.length > 0) {
+      continuationContext = header + selectedPages.join("\n") + footer;
+    } else {
+      // Fallback if no pages fit
+      continuationContext = `\nSTORY CONTINUATION CONTEXT:\nThis is page ${previousPages.length + 1} of an existing comic story with ${previousPages.length} previous pages. Continue the story maintaining consistency.\n`;
+    }
   }
 
   let characterSection = "";

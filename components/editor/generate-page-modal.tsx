@@ -15,6 +15,7 @@ import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { validateFileForUpload, generateFilePreview } from "@/lib/file-utils";
 import { useS3Upload } from "next-s3-upload";
 import { isContentPolicyViolation } from "@/lib/utils";
+import { MAX_SYSTEM_LENGTH, MAX_USER_PROMPT } from "@/lib/prompt";
 
 interface CharacterItem {
   url: string;
@@ -330,13 +331,19 @@ export function GeneratePageModal({
                 <textarea
                   autoFocus
                   value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+
+                  onChange={(e) => setPrompt(e.target.value.slice(
+                    // Only allow users to type up to MAX_SYSTEM_LENGTH characters in the prompt.
+                    // Ensure users cannot paste or otherwise enter more text than the max.
+                    0, MAX_USER_PROMPT))
+                  }
                   placeholder={
                     isRedrawMode
                       ? "Tweak the prompt to improve this page..."
                       : "Continue the story... Describe what happens next."
                   }
                   disabled={isGenerating}
+                  maxLength={MAX_USER_PROMPT}
                   className="w-full bg-transparent border-none text-sm text-white placeholder-muted-foreground/50 focus:ring-0 focus:outline-none resize-none h-20 leading-relaxed tracking-tight"
                 />
 
@@ -358,11 +365,10 @@ export function GeneratePageModal({
                                 onClick={() => toggleCharacterSelection(index)}
                                 onDoubleClick={() => setShowPreview(imageUrl)}
                                 disabled={isGenerating}
-                                className={`w-10 h-10 rounded-md overflow-hidden transition-all disabled:opacity-50 disabled:cursor-not-allowed relative ${
-                                  isSelected
-                                    ? "border-2 border-indigo-500"
-                                    : "border-2 border-transparent hover:border-indigo/50"
-                                }`}
+                                className={`w-10 h-10 rounded-md overflow-hidden transition-all disabled:opacity-50 disabled:cursor-not-allowed relative ${isSelected
+                                  ? "border-2 border-indigo-500"
+                                  : "border-2 border-transparent hover:border-indigo/50"
+                                  }`}
                                 title="Click to select/deselect, double-click to preview"
                               >
                                 <img
@@ -432,7 +438,7 @@ export function GeneratePageModal({
               {isRedrawMode
                 ? "Previous pages and characters automatically referenced."
                 : "Previous page automatically referenced. " +
-                  `${selectedCharacterIndices.size} selected characters.`}
+                `${selectedCharacterIndices.size} selected characters.`}
             </div>
 
             <Button
