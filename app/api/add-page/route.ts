@@ -12,13 +12,16 @@ import {
   getLastPageImage,
   deletePage,
 } from "@/lib/db-actions";
-import { freeTierRateLimit } from "@/lib/rate-limit";
+import {
+  consumeFreeTierCredit,
+  enforceRateLimit,
+  refundFreeTierCredit,
+} from "@/lib/rate-limit";
 import { uploadImageToS3 } from "@/lib/s3-upload";
 import { buildComicPrompt } from "@/lib/prompt";
-import {
-  isContentPolicyViolation,
-  getContentPolicyErrorMessage,
-} from "@/lib/utils";
+import { parseUserApiKey } from "@/lib/api-key";
+import { addPageRequestSchema, parseJsonBody } from "@/lib/input-limits";
+import { generationErrorResponse } from "@/lib/generation-errors";
 
 const NEW_MODEL = false;
 
@@ -31,8 +34,12 @@ const FIXED_DIMENSIONS = NEW_MODEL
   : { width: 864, height: 1184 };
 
 export async function POST(request: NextRequest) {
+  let userId: string | null = null;
+  let creditChargedAt: number | null = null;
+  let imageGenerated = false;
+
   try {
-    const { userId } = await auth();
+    ({ userId } = await auth());
 
     if (!userId) {
       return NextResponse.json(
@@ -41,17 +48,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const {
-      storyId,
-      pageId,
-      prompt,
-      characterImages = [],
-    } = await request.json();
-
-    if (!storyId || !prompt) {
+    const body = await parseJsonBody(request, addPageRequestSchema);
+    if (!body) {
       return NextResponse.json(
-        { error: "Missing required fields: storyId and prompt" },
+        { error: "Missing or invalid fields: storyId and prompt" },
         { status: 400 },
+      );
+    }
+
+    const { storyId, pageId, prompt, characterImages } = body;
+
+    const userApiKey = parseUserApiKey(request.headers.get("x-api-key"));
+    if (userApiKey.status === "invalid") {
+      return NextResponse.json(
+        { error: "Invalid API key", errorType: "invalid_api_key" },
+        { status: 400 },
+      );
+    }
+
+    const rateLimitResponse = await enforceRateLimit(
+      "generation",
+      request,
+      userId,
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const usesOwnApiKey = userApiKey.status === "valid";
+    const finalApiKey = usesOwnApiKey
+      ? userApiKey.key
+      : process.env.TOGETHER_API_KEY;
+
+    if (!finalApiKey) {
+      console.error("TOGETHER_API_KEY is not configured");
+      return NextResponse.json(
+        { error: "Service temporarily unavailable" },
+        { status: 503 },
       );
     }
 
@@ -69,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     let page;
-    let pageNumber;
+    let pageNumber: number;
     let isRedraw = false;
 
     if (pageId) {
@@ -88,8 +119,17 @@ export async function POST(request: NextRequest) {
       page = existingPage;
       pageNumber = existingPage.pageNumber;
     } else {
-      // Add new page mode
       pageNumber = await getNextPageNumber(story.id);
+    }
+
+    if (!usesOwnApiKey) {
+      const quotaResponse = await consumeFreeTierCredit(userId);
+      if (quotaResponse) return quotaResponse;
+      creditChargedAt = Date.now();
+    }
+
+    if (!page) {
+      // Add new page mode
       page = await createPage({
         storyId: story.id,
         pageNumber,
@@ -140,17 +180,13 @@ export async function POST(request: NextRequest) {
       previousPages,
     });
 
-    const client = new Together({
-      apiKey: process.env.TOGETHER_API_KEY,
-    });
+    const client = new Together({ apiKey: finalApiKey });
 
     let response;
     try {
-      console.log("Starting image generation for ...");
-      console.dir({
-        fullPrompt,
-        referenceImages,
-      });
+      console.log(
+        `Starting image generation (prompt length ${fullPrompt.length}, ${referenceImages.length} reference images)`,
+      );
       const startTime = Date.now();
       response = await client.images.generate({
         model: IMAGE_MODEL,
@@ -188,48 +224,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (
-        error instanceof Error &&
-        error.message &&
-        isContentPolicyViolation(error.message)
-      ) {
-        return NextResponse.json(
-          {
-            error: getContentPolicyErrorMessage(),
-            errorType: "content_policy",
-          },
-          { status: 400 },
-        );
-      }
-
-      if (error instanceof Error && "status" in error) {
-        const status = (error as any).status;
-        if (status === 402) {
-          return NextResponse.json(
-            {
-              error: "Insufficient API credits.",
-              errorType: "credit_limit",
-            },
-            { status: 402 },
-          );
-        }
-        return NextResponse.json(
-          {
-            error: error.message || `Failed to generate image: ${status}`,
-            errorType: "api_error",
-          },
-          { status: status || 500 },
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error: `Internal server error: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        },
-        { status: 500 },
-      );
+      return generationErrorResponse(error, usesOwnApiKey);
     }
 
     if (!response.data || !response.data[0] || !response.data[0].url) {
@@ -239,25 +234,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    imageGenerated = true;
     const imageUrl = response.data[0].url;
     const s3Key = `${story.id}/page-${page.pageNumber}-${Date.now()}.jpg`;
     const s3ImageUrl = await uploadImageToS3(imageUrl, s3Key);
 
     await updatePage(page.id, s3ImageUrl);
-
-    // Apply rate limiting for free tier after successful generation
-    const hasApiKey = request.headers.get("x-api-key");
-    if (!hasApiKey) {
-      try {
-        await freeTierRateLimit.limit(userId);
-      } catch (rateLimitError) {
-        console.error(
-          "Error applying rate limit after successful generation:",
-          rateLimitError,
-        );
-        // Don't fail the request if rate limiting fails, just log it
-      }
-    }
 
     return NextResponse.json({
       imageUrl: s3ImageUrl,
@@ -267,12 +249,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in add-page API:", error);
     return NextResponse.json(
-      {
-        error: `Internal server error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
+  } finally {
+    if (userId && creditChargedAt !== null && !imageGenerated) {
+      await refundFreeTierCredit(userId, creditChargedAt);
+    }
   }
 }

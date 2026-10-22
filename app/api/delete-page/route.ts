@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoryWithPagesBySlug, deletePage } from "@/lib/db-actions";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -13,9 +14,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const rateLimitResponse = await enforceRateLimit("write", request, userId);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { storySlug, pageId } = await request.json();
 
-    if (!storySlug || !pageId) {
+    if (
+      typeof storySlug !== "string" ||
+      typeof pageId !== "string" ||
+      !storySlug ||
+      !pageId
+    ) {
       return NextResponse.json(
         { error: "Missing required fields: storySlug and pageId" },
         { status: 400 }
@@ -55,11 +64,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error("Error deleting page:", error);
     return NextResponse.json(
-      {
-        error: `Internal server error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
