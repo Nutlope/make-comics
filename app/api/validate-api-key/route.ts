@@ -1,15 +1,40 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import Together from "together-ai";
+import { parseUserApiKey } from "@/lib/api-key";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { apiKey } = await request.json();
+    const { userId } = await auth();
 
-    if (!apiKey || typeof apiKey !== "string") {
+    const rateLimitResponse = await enforceRateLimit(
+      "validateApiKey",
+      request,
+      userId,
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      body = null;
+    }
+    const apiKey = parseUserApiKey(
+      typeof body === "object" && body !== null
+        ? (body as { apiKey?: unknown }).apiKey
+        : undefined,
+    );
+
+    if (apiKey.status === "absent") {
       return NextResponse.json(
         { valid: false, error: "API key is required" },
         { status: 400 },
       );
+    }
+    if (apiKey.status === "invalid") {
+      return NextResponse.json({ valid: false, error: "Invalid API key" });
     }
 
     // Dynamically fetch the fastest available model
@@ -19,7 +44,7 @@ export async function POST(request: NextRequest) {
     const { model } = await routerRes.json();
 
     // Fire a minimal completion — 1 output token to keep cost/latency negligible
-    const client = new Together({ apiKey });
+    const client = new Together({ apiKey: apiKey.key });
     await client.chat.completions.create({
       model,
       messages: [{ role: "user", content: "hi" }],
@@ -37,6 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: "Invalid API key" });
     }
 
+    console.error("Error validating API key:", status);
     return NextResponse.json(
       { valid: false, error: "Validation failed" },
       { status: 500 },

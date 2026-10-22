@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoryWithPagesBySlug } from "@/lib/db-actions";
 import { jsPDF } from "jspdf";
+import { auth } from "@clerk/nextjs/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    const rateLimitResponse = await enforceRateLimit(
+      "download",
+      request,
+      userId,
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { searchParams } = new URL(request.url);
     const storySlug = searchParams.get("storySlug");
 

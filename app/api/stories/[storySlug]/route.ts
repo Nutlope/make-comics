@@ -4,6 +4,9 @@ import { getStoryWithPagesBySlug, updateStory } from "@/lib/db-actions";
 import { db } from "@/lib/db";
 import { stories } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
+const MAX_TITLE_LENGTH = 200;
 
 export async function GET(
   request: NextRequest,
@@ -53,9 +56,12 @@ export async function GET(
     // Check if the story belongs to the authenticated user
     const isOwner = userId ? result.story.userId === userId : false;
 
+    const { userId: _ownerId, ...story } = result.story;
+
     // Return the story data with ownership information
     const responseData = {
       ...result,
+      story,
       isOwner,
     };
     return NextResponse.json(responseData);
@@ -81,6 +87,9 @@ export async function PUT(
         { status: 401 }
       );
     }
+
+    const rateLimitResponse = await enforceRateLimit("write", request, userId);
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { storySlug: slug } = await params;
 
@@ -109,6 +118,10 @@ export async function PUT(
         { error: "Title is required and must be a non-empty string" },
         { status: 400 }
       );
+    }
+
+    if (title.trim().length > MAX_TITLE_LENGTH) {
+      return NextResponse.json({ error: "Title is too long" }, { status: 400 });
     }
 
     await updateStory(result.story.id, { title: title.trim() });

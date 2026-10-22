@@ -35,11 +35,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in check-credits API:", error);
     return NextResponse.json(
-      {
-        error: `Internal server error: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
